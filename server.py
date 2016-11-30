@@ -52,6 +52,8 @@ def root():
     elif event == "issue_comment":
         if data['action'] == "created":
             msg = IssueComment(data).created()
+        elif data['action'] == "edited":
+            msg = IssueComment(data).edited()
     elif event == "repository":
         if data['action'] == "created":
             msg = Repository(data).created()

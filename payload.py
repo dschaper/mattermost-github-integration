@@ -121,6 +121,12 @@ class IssueComment(Payload):
 > %s""" % (self.user_link(), self.number, self.title, self.url, body)
         return msg
 
+    def edited(self):
+        body = self.preview(self.body)
+        msg = """%s edited the comment in [#%s %s](%s):
+> %s""" % (self.user_link(), self.number, self.title, self.url, body)
+        return msg
+
 class CommitComment(Payload):
     def __init__(self, data):
         Payload.__init__(self, data)
