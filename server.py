@@ -85,6 +85,7 @@ def root():
         else:
             return "Notification ignored (repository is blacklisted)."
     else:
+        print event, data
         return "Not implemented", 400
 
 def post(text, url, channel):

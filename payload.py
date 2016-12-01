@@ -1,5 +1,6 @@
 from config import SHOW_AVATARS
 
+
 class Payload(object):
     def __init__(self, data):
         self.data = data
@@ -30,6 +31,61 @@ class Payload(object):
         if result != text:
             result += " [...]"
         return result
+
+
+class Comment(Payload):
+    def __init__(self, data):
+        Payload.__init__(self, data)
+        self.body   = self.data['comment']['body']
+        self.url    = self.data['comment']['html_url']
+
+    def created(self):
+        raise NotImplementedError('All comments must include the created method.')
+
+
+class PullRequestComment(Comment):
+    def __init__(self, data):
+        Comment.__init__(self, data)
+        self.number = self.data['pull_request']['number']
+        self.title  = self.data['pull_request']['title']
+
+    def created(self):
+        body = self.preview(self.body)
+        msg = """%s commented on pull request [#%s %s](%s):
+> %s""" % (self.user_link(), self.number, self.title, self.url, body)
+        return msg
+
+
+class IssueComment(Comment):
+    def __init__(self, data):
+        Comment.__init__(self, data)
+        self.number = self.data['issue']['number']
+        self.title  = self.data['issue']['title']
+
+    def created(self):
+        body = self.preview(self.body)
+        msg = """%s commented on [#%s %s](%s):
+> %s""" % (self.user_link(), self.number, self.title, self.url, body)
+        return msg
+
+    def edited(self):
+        body = self.preview(self.body)
+        msg = """%s edited a comment in [#%s %s](%s):
+> %s""" % (self.user_link(), self.number, self.title, self.url, body)
+        return msg
+
+
+class CommitComment(Comment):
+    def __init__(self, data):
+        Comment.__init__(self, data)
+        self.cid    = self.data['comment']['commit_id'][:7]
+
+    def created(self):
+        body = self.preview(self.body)
+        msg = """%s commented on [%s](%s):
+> %s""" % (self.user_link(), self.cid, self.url, body)
+        return msg
+
 
 class PullRequest(Payload):
     def __init__(self, data):
@@ -62,19 +118,6 @@ class PullRequest(Payload):
             action, self.number, self.title, self.url)
         return msg
 
-class PullRequestComment(Payload):
-    def __init__(self, data):
-        Payload.__init__(self, data)
-        self.number = self.data['pull_request']['number']
-        self.title  = self.data['pull_request']['title']
-        self.body   = self.data['comment']['body']
-        self.url    = self.data['comment']['html_url']
-
-    def created(self):
-        body = self.preview(self.body)
-        msg = """%s commented on pull request [#%s %s](%s):
-> %s""" % (self.user_link(), self.number, self.title, self.url, body)
-        return msg
 
 class Issue(Payload):
     def __init__(self, data):
@@ -107,38 +150,6 @@ class Issue(Payload):
         msg = """%s assigned %s to issue [#%s %s](%s) in %s.""" % (self.user_link(), assignee, self.number, self.title, self.url, self.repo_link())
         return msg
 
-class IssueComment(Payload):
-    def __init__(self, data):
-        Payload.__init__(self, data)
-        self.number = self.data['issue']['number']
-        self.title  = self.data['issue']['title']
-        self.url    = self.data['comment']['html_url']
-        self.body   = self.data['comment']['body']
-
-    def created(self):
-        body = self.preview(self.body)
-        msg = """%s commented on [#%s %s](%s):
-> %s""" % (self.user_link(), self.number, self.title, self.url, body)
-        return msg
-
-    def edited(self):
-        body = self.preview(self.body)
-        msg = """%s edited the comment in [#%s %s](%s):
-> %s""" % (self.user_link(), self.number, self.title, self.url, body)
-        return msg
-
-class CommitComment(Payload):
-    def __init__(self, data):
-        Payload.__init__(self, data)
-        self.cid    = self.data['comment']['commit_id'][:7]
-        self.url    = self.data['comment']['html_url']
-        self.body   = self.data['comment']['body']
-
-    def created(self):
-        body = self.preview(self.body)
-        msg = """%s commented on [%s](%s):
-> %s""" % (self.user_link(), self.cid, self.url, body)
-        return msg
 
 class Repository(Payload):
     def __init__(self, data):
@@ -149,6 +160,7 @@ class Repository(Payload):
         msg = """%s created new repository %s:
 > %s""" % (self.user_link(), self.repo_link(), descr)
         return msg
+
 
 class Branch(Payload):
     def __init__(self, data):
